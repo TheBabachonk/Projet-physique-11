@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Simplifiée de Centrale Nucléaire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            margin-bottom: 50px; /* Added some bottom margin for scroll */
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        #simulation-area {
+            display: flex;
+            border: 2px solid #555;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        #plant-visuals {
+            width: 400px;
+            height: 350px;
+            border: 1px solid #ccc;
+            margin-right: 20px;
+            position: relative;
+            background-color: #e9e9e9;
+        }
+
+        .component {
+            position: absolute;
+            border: 1px solid #000;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            text-align: center;
+            padding: 2px;
+        }
+
+        #reactor-core {
+            width: 100px;
+            height: 150px;
+            background-color: lightgrey;
+            top: 50px;
+            left: 30px;
+        }
+
+        #control-rods-visual-container {
+            width: 40px;
+            height: 130px;
+            background-color: #777;
+            position: absolute;
+            top: 60px;
+            left: 60px;
+            overflow: hidden;
+        }
+
+        #control-rods-visual {
+            width: 100%;
+            height: 50%;
+            background-color: darkslategrey;
+            position: absolute;
+            bottom: 0;
+        }
+
+        #coolant-primary {
+            width: 20px;
+            height: 150px;
+            background-color: #ADD8E6;
+            top: 50px;
+            left: 140px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        #steam-generator {
+            width: 80px;
+            height: 100px;
+            background-color: #silver;
+            top: 75px;
+            left: 170px;
+        }
+
+        #turbine {
+            width: 80px;
+            height: 60px;
+            background-color: #aabbcc;
+            top: 105px;
+            left: 260px;
+        }
+         #turbine-rotor {
+            width: 10px;
+            height: 40px;
+            background-color: #555;
+            margin: auto;
+            border-radius: 2px;
+         }
+
+        #generator {
+            width: 60px;
+            height: 60px;
+            background-color: #ccbbaa;
+            top: 105px;
+            left: 330px;
+        }
+
+        #condenser {
+            width: 100px;
+            height: 70px;
+            background-color: #87CEEB;
+            top: 220px;
+            left: 170px;
+        }
+
+        #controls-and-data {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 280px;
+        }
+
+        .control-group, .data-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .button-primary {
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        #scram-button {
+            background-color: #ff4d4d;
+        }
+        #scram-button:hover:not(:disabled) {
+            background-color: #cc0000;
+        }
+        #scram-button:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+
+        #reset-button {
+            background-color: #4CAF50;
+        }
+        #reset-button:hover:not(:disabled) {
+            background-color: #388E3C;
+        }
+         #reset-button:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+
+        .data-readout {
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
+        .danger {
+            color: red;
+            font-weight: bold;
+            animation: blinker 1s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .info-section { /* Common style for explanation and advantages/disadvantages */
+            width: 700px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            margin-top: 0;
+        }
+        .info-section p, .info-section ul {
+            line-height: 1.6;
+        }
+        .info-section ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simulation Simplifiée de Centrale Nucléaire</h1>
+
+    <div id="simulation-area">
+        <div id="plant-visuals">
+            <div id="reactor-core" class="component">Cœur Réacteur<br><span id="reactor-temp-visual">20°C</span></div>
+            <div id="control-rods-visual-container">
+                <div id="control-rods-visual"></div>
+            </div>
+            <div id="coolant-primary" class="component">Caloporteur</div>
+            <div id="steam-generator" class="component">Gén. Vapeur</div>
+            <div id="turbine" class="component">Turbine <div id="turbine-rotor"></div></div>
+            <div id="generator" class="component">Alternateur</div>
+            <div id="condenser" class="component">Condenseur</div>
+        </div>
+
+        <div id="controls-and-data">
+            <div class="control-group">
+                <label for="control-rod-slider">Barres de contrôle (0% sorties - 100% insérées):</label>
+                <input type="range" id="control-rod-slider" min="0" max="100" value="75">
+                <span id="control-rod-value">75% insérées</span>
+            </div>
+             <div class="control-group">
+                <label for="coolant-flow-slider">Pompe caloporteur (0-100%):</label>
+                <input type="range" id="coolant-flow-slider" min="0" max="100" value="80">
+                <span id="coolant-flow-value">80%</span>
+            </div>
+            <div class="control-group">
+                <button id="scram-button" class="button-primary">SCRAM ! (Arrêt d'Urgence)</button>
+                <button id="reset-button" class="button-primary" disabled>Réinitialiser</button>
+            </div>
+
+            <div class="data-group">
+                <label>État du Réacteur :</label>
+                <div class="data-readout">Temp: <span id="reactor-temperature">20</span> °C</div>
+                <div class="data-readout">Activité Neutron.: <span id="neutron-activity">0</span></div>
+                <div id="reactor-status-message" class="data-readout">Stable</div>
+            </div>
+
+            <div class="data-group">
+                <label>Production d'Énergie :</label>
+                <div class="data-readout">Pression Vapeur: <span id="steam-pressure">0</span> kPa</div>
+                <div class="data-readout">Vitesse Turbine: <span id="turbine-speed">0</span> RPM</div>
+                <div class="data-readout">Puissance Fournie: <span id="power-output">0</span> MW</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="explanation" class="info-section">
+        <h2>Comment ça marche (version simplifiée) ?</h2>
+        <p>
+            Cette simulation modélise de manière très basique le fonctionnement d'une centrale nucléaire :
+        </p>
+        <ul>
+            <li><strong>Cœur du Réacteur :</strong> C'est là que la "fission" (non simulée en détail) génère de la chaleur. Sa température augmente avec l'activité neutronique.</li>
+            <li><strong>Barres de Contrôle :</strong> En les insérant davantage (valeur en % plus élevée), on réduit l'activité des neutrons et donc la chaleur produite. Les retirer augmente la réaction.</li>
+            <li><strong>Caloporteur (Fluide de refroidissement) :</strong> Ce fluide circule et extrait la chaleur du réacteur. Un débit plus élevé refroidit mieux.</li>
+            <li><strong>Générateur de Vapeur :</strong> Le caloporteur chaud transforme l'eau (dans un circuit séparé, non détaillé ici) en vapeur.</li>
+            <li><strong>Turbine :</strong> La vapeur sous pression fait tourner la turbine.</li>
+            <li><strong>Alternateur :</strong> La turbine entraîne l'alternateur, qui produit de l'électricité (Puissance Fournie).</li>
+            <li><strong>Condenseur :</strong> Refroidit la vapeur pour la retransformer en eau, qui retourne au générateur de vapeur.</li>
+            <li><strong>SCRAM (Arrêt d'Urgence) :</strong> Insère toutes les barres de contrôle d'un coup pour stopper rapidement la réaction en chaîne et réduire la température.</li>
+        </ul>
+        <p>
+            <strong>Attention :</strong> C'est une simplification extrême ! La physique et l'ingénierie réelles sont bien plus complexes.
+        </p>
+    </div>
+
+    <div id="avantages-inconvenients" class="info-section">
+        <h2>Avantages et Inconvénients des Centrales Nucléaires</h2>
+        <p>L'énergie nucléaire est une source d'énergie complexe avec des aspects positifs et négatifs importants :</p>
+
+        <h3>Avantages :</h3>
+        <ul>
+            <li><strong>Faibles émissions de gaz à effet de serre :</strong> Pendant leur fonctionnement, les centrales nucléaires n'émettent quasiment pas de CO2, contribuant ainsi à la lutte contre le changement climatique.</li>
+            <li><strong>Production d'énergie massive et continue :</strong> Une centrale peut produire une grande quantité d'électricité de manière fiable et constante (indépendamment des conditions météorologiques, contrairement au solaire ou à l'éolien).</li>
+            <li><strong>Densité énergétique élevée :</strong> Une petite quantité de combustible nucléaire (uranium) peut produire une énorme quantité d'énergie.</li>
+            <li><strong>Indépendance énergétique :</strong> Pour les pays important peu ou pas d'uranium, cela peut réduire la dépendance aux combustibles fossiles importés.</li>
+            <li><strong>Coût compétitif à long terme :</strong> Bien que l'investissement initial soit élevé, les coûts d'exploitation et de combustible peuvent rendre l'énergie nucléaire économiquement avantageuse sur la durée de vie de la centrale (plusieurs décennies).</li>
+        </ul>
+
+        <h3>Inconvénients :</h3>
+        <ul>
+            <li><strong>Déchets radioactifs :</strong> La production d'énergie nucléaire génère des déchets hautement radioactifs qui restent dangereux pendant des milliers d'années et nécessitent des solutions de stockage complexes et sécurisées à très long terme.</li>
+            <li><strong>Risque d'accidents graves :</strong> Bien que rares, les accidents nucléaires (comme Tchernobyl ou Fukushima) peuvent avoir des conséquences catastrophiques et durables sur l'environnement et la santé humaine.</li>
+            <li><strong>Coûts de construction initiaux et de démantèlement élevés :</strong> La construction d'une centrale nucléaire est très coûteuse, et son démantèlement en fin de vie l'est également.</li>
+            <li><strong>Prolifération nucléaire :</strong> Les technologies et matériaux utilisés dans le nucléaire civil peuvent potentiellement être détournés à des fins militaires.</li>
+            <li><strong>Acceptabilité sociale :</strong> L'énergie nucléaire suscite souvent des craintes et une opposition d'une partie de la population en raison des risques associés.</li>
+        </ul>
+    </div>
+
+    <script>
+        // --- Éléments DOM ---
+        const controlRodSlider = document.getElementById('control-rod-slider');
+        const controlRodValueDisplay = document.getElementById('control-rod-value');
+        const coolantFlowSlider = document.getElementById('coolant-flow-slider');
+        const coolantFlowValueDisplay = document.getElementById('coolant-flow-value');
+        const scramButton = document.getElementById('scram-button');
+        const resetButton = document.getElementById('reset-button');
+
+        const reactorTempDisplay = document.getElementById('reactor-temperature');
+        const reactorTempVisualDisplay = document.getElementById('reactor-temp-visual');
+        const reactorCoreVisual = document.getElementById('reactor-core');
+        const neutronActivityDisplay = document.getElementById('neutron-activity');
+        const reactorStatusMessage = document.getElementById('reactor-status-message');
+
+        const steamPressureDisplay = document.getElementById('steam-pressure');
+        const turbineSpeedDisplay = document.getElementById('turbine-speed');
+        const powerOutputDisplay = document.getElementById('power-output');
+
+        const controlRodsVisual = document.getElementById('control-rods-visual');
+        const turbineRotorVisual = document.getElementById('turbine-rotor');
+
+        // --- Variables de Simulation ---
+        const INITIAL_TEMP = 20.0;
+        const INITIAL_CONTROL_ROD = 75;
+        const INITIAL_COOLANT_FLOW = 80;
+
+        let reactorTemperature = INITIAL_TEMP;
+        let neutronActivity = 0.0;
+        let controlRodPosition = INITIAL_CONTROL_ROD;
+        let coolantFlowRate = INITIAL_COOLANT_FLOW;
+        let steamPressure = 0.0;
+        let turbineSpeed = 0;
+        let powerOutput = 0;
+
+        const AMBIENT_TEMP = 20.0;
+        const MAX_SAFE_TEMP = 800;
+        const MELTDOWN_TEMP = 1200;
+        const COOLANT_EFFICIENCY = 0.15;
+        const HEAT_FROM_NEUTRONS = 8.0;
+        const ROD_EFFECTIVENESS = 1.2;
+        const WATER_BOILING_POINT = 100;
+        const STEAM_TO_TURBINE_RATIO = 0.5;
+        const TURBINE_TO_POWER_RATIO = 0.1;
+        const SCRAM_COOLDOWN_TARGET = AMBIENT_TEMP + 10;
+
+        let simulationInterval;
+        let isScrammed = false;
+
+        // --- Logique Principale de la Simulation ---
+        function updateSimulation() {
+            if (isScrammed && reactorTemperature <= SCRAM_COOLDOWN_TARGET) {
+                reactorStatusMessage.textContent = "SCRAM - Refroidissement OK. Réinitialisation possible.";
+                reactorStatusMessage.className = 'data-readout warning';
+                resetButton.disabled = false;
+            }
+
+            if (!isScrammed) {
+                neutronActivity = Math.max(0, (100 - controlRodPosition) / 100 * 100 - (controlRodPosition / 100 * ROD_EFFECTIVENESS * 50) );
+                neutronActivity = Math.max(0, neutronActivity);
+            } else {
+                 neutronActivity = 0;
+            }
+
+            let heatGenerated = neutronActivity * HEAT_FROM_NEUTRONS;
+            let tempDifference = reactorTemperature - AMBIENT_TEMP;
+            let heatDissipated = tempDifference * (coolantFlowRate / 100) * COOLANT_EFFICIENCY;
+            heatDissipated = Math.max(0, heatDissipated);
+
+            let tempChange = (heatGenerated - heatDissipated) * 0.05;
+            reactorTemperature += tempChange;
+
+            if (reactorTemperature < AMBIENT_TEMP && !isScrammed) reactorTemperature = AMBIENT_TEMP;
+            if (isScrammed) {
+                let coolingRate = (reactorTemperature - AMBIENT_TEMP) * 0.03 + 0.5;
+                reactorTemperature -= coolingRate;
+                if(reactorTemperature < AMBIENT_TEMP) reactorTemperature = AMBIENT_TEMP;
+            }
+
+            if (reactorTemperature > WATER_BOILING_POINT && coolantFlowRate > 10 && !isScrammed) {
+                steamPressure = Math.max(0, (reactorTemperature - WATER_BOILING_POINT) * (coolantFlowRate / 100) * 0.2);
+            } else {
+                steamPressure = Math.max(0, steamPressure * 0.85);
+                 if(isScrammed) steamPressure = Math.max(0, steamPressure * 0.5);
+            }
+
+            turbineSpeed = Math.max(0, steamPressure * STEAM_TO_TURBINE_RATIO * (1 - controlRodPosition/300) );
+            if(isScrammed) turbineSpeed = Math.max(0, turbineSpeed*0.7);
+
+            powerOutput = Math.max(0, turbineSpeed * TURBINE_TO_POWER_RATIO);
+
+            if (!isScrammed) {
+                reactorStatusMessage.className = 'data-readout';
+                if (reactorTemperature >= MELTDOWN_TEMP) {
+                    reactorStatusMessage.textContent = "!!! FUSION DU CŒUR !!!";
+                    reactorStatusMessage.className = 'data-readout danger';
+                    performScram("FUSION DU CŒUR");
+                } else if (reactorTemperature >= MAX_SAFE_TEMP) {
+                    reactorStatusMessage.textContent = "ATTENTION : Température élevée !";
+                    reactorStatusMessage.className = 'data-readout warning';
+                } else {
+                    reactorStatusMessage.textContent = "Stable";
+                }
+            } else {
+                 if (reactorTemperature > SCRAM_COOLDOWN_TARGET) {
+                     reactorStatusMessage.textContent = "SCRAM - En Refroidissement...";
+                     reactorStatusMessage.className = 'data-readout warning';
+                 }
+            }
+
+            reactorTempDisplay.textContent = reactorTemperature.toFixed(1);
+            reactorTempVisualDisplay.textContent = reactorTemperature.toFixed(1) + "°C";
+            neutronActivityDisplay.textContent = neutronActivity.toFixed(2);
+            steamPressureDisplay.textContent = steamPressure.toFixed(1);
+            turbineSpeedDisplay.textContent = turbineSpeed.toFixed(0);
+            powerOutputDisplay.textContent = powerOutput.toFixed(1);
+
+            controlRodsVisual.style.height = controlRodPosition + '%';
+            turbineRotorVisual.style.transform = `rotate(${Date.now() / (50 - Math.min(45,turbineSpeed/100))}deg)`;
+
+            if(reactorTemperature >= MAX_SAFE_TEMP *0.9 && reactorTemperature < MAX_SAFE_TEMP) {
+                 reactorCoreVisual.style.backgroundColor = `rgb(255, ${255 - (reactorTemperature - MAX_SAFE_TEMP*0.9)*2.5}, 0)`;
+            } else if (reactorTemperature >= MAX_SAFE_TEMP) {
+                 reactorCoreVisual.style.backgroundColor = `rgb(255, 0, 0)`;
+            }
+             else {
+                 reactorCoreVisual.style.backgroundColor = 'lightgrey';
+            }
+        }
+
+        // --- Fonctions de Contrôle ---
+        function handleControlRodInput(event) {
+            if (isScrammed) return;
+            controlRodPosition = parseInt(event.target.value);
+            controlRodValueDisplay.textContent = `${controlRodPosition}% insérées`;
+        }
+
+        function handleCoolantFlowInput(event) {
+            coolantFlowRate = parseInt(event.target.value);
+            coolantFlowValueDisplay.textContent = `${coolantFlowRate}%`;
+        }
+
+        function performScram(reason = "SCRAM Manuel") {
+            if (isScrammed && reason !== "FUSION DU CŒUR") return;
+            isScrammed = true;
+            controlRodPosition = 100;
+            controlRodSlider.value = 100;
+            controlRodValueDisplay.textContent = `100% insérées (SCRAM)`;
+            neutronActivity = 0;
+
+            controlRodSlider.disabled = true;
+            coolantFlowSlider.disabled = true;
+            scramButton.disabled = true;
+            scramButton.textContent = "SCRAMMÉ";
+            resetButton.disabled = true;
+
+            reactorStatusMessage.textContent = reason + " - Système de Refroidissement Actif";
+            reactorStatusMessage.className = 'data-readout danger';
+            console.log(`SCRAM Initié: ${reason}. Barres de contrôle totalement insérées.`);
+        }
+
+        function resetSimulation() {
+            isScrammed = false;
+
+            reactorTemperature = INITIAL_TEMP;
+            neutronActivity = 0.0;
+            controlRodPosition = INITIAL_CONTROL_ROD;
+            coolantFlowRate = INITIAL_COOLANT_FLOW;
+            steamPressure = 0.0;
+            turbineSpeed = 0;
+            powerOutput = 0;
+
+            controlRodSlider.value = INITIAL_CONTROL_ROD;
+            controlRodValueDisplay.textContent = `${INITIAL_CONTROL_ROD}% insérées`;
+            coolantFlowSlider.value = INITIAL_COOLANT_FLOW;
+            coolantFlowValueDisplay.textContent = `${INITIAL_COOLANT_FLOW}%`;
+
+            controlRodSlider.disabled = false;
+            coolantFlowSlider.disabled = false;
+            scramButton.disabled = false;
+            scramButton.textContent = "SCRAM ! (Arrêt d'Urgence)";
+            resetButton.disabled = true;
+
+            reactorStatusMessage.textContent = "Stable";
+            reactorStatusMessage.className = 'data-readout';
+            reactorCoreVisual.style.backgroundColor = 'lightgrey';
+
+            console.log("Simulation Réinitialisée.");
+            updateSimulation();
+        }
+
+        // --- Écouteurs d'Événements ---
+        controlRodSlider.addEventListener('input', handleControlRodInput);
+        coolantFlowSlider.addEventListener('input', handleCoolantFlowInput);
+        scramButton.addEventListener('click', () => performScram());
+        resetButton.addEventListener('click', resetSimulation);
+
+        // --- Initialisation & Démarrage ---
+        function initializeSimulation() {
+            controlRodPosition = parseInt(controlRodSlider.value);
+            controlRodValueDisplay.textContent = `${controlRodPosition}% insérées`;
+            coolantFlowRate = parseInt(coolantFlowSlider.value);
+            coolantFlowValueDisplay.textContent = `${coolantFlowRate}%`;
+            controlRodsVisual.style.height = controlRodPosition + '%';
+            reactorTempVisualDisplay.textContent = reactorTemperature.toFixed(1) + "°C";
+            resetButton.disabled = true;
+
+            simulationInterval = setInterval(updateSimulation, 100);
+            console.log("Simulation Simplifiée de Centrale Nucléaire Initialisée.");
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeSimulation);
+    </script>
+</body>
+</html>
